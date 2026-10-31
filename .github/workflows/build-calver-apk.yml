@@ -26,9 +26,13 @@ jobs:
         run: |
           set -o pipefail
           if ! ./gradlew --no-daemon --stacktrace assembleDebug > build.log 2>&1; then
-            { grep -E "^e: " build.log; grep -A8 "What went wrong" build.log; } | grep -v "^> Task" | head -9 > errs.txt
-            msg=$(sed 's/%/%25/g' errs.txt | awk '{printf "%s%%0A", $0}')
-            echo "::error::${msg}"
+            grep -vE "^> Task|^\s*at |^$" build.log | grep -iE "^e: |error|wrong|exception|could not|failed|requires|caused" | head -45 > errs.txt
+            [ -s errs.txt ] || grep -vE "^> Task|^$" build.log | tail -45 > errs.txt
+            split -l 5 errs.txt part_
+            for f in part_*; do
+              msg=$(sed 's/%/%25/g' "$f" | awk 'BEGIN{ORS="%0A"}{print}')
+              echo "::error title=$f::${msg}"
+            done
             exit 1
           fi
       - name: Upload APK
