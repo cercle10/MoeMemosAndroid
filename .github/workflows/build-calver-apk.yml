@@ -25,14 +25,12 @@ jobs:
       - name: Build debug APK
         run: |
           set -o pipefail
-          if ! ./gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee build.log; then
-            grep -nE "^e: |What went wrong|error:|Error|FAILED|Could not|requires|> " build.log | head -40 | while IFS= read -r line; do
-              echo "::error::${line//%/%25}"
-            done
-            tail -15 build.log | while IFS= read -r line; do echo "::error::TAIL ${line//%/%25}"; done
+          if ! ./gradlew --no-daemon --stacktrace assembleDebug > build.log 2>&1; then
+            { grep -E "^e: " build.log; grep -A8 "What went wrong" build.log; } | grep -v "^> Task" | head -9 > errs.txt
+            msg=$(sed 's/%/%25/g' errs.txt | awk '{printf "%s%%0A", $0}')
+            echo "::error::${msg}"
             exit 1
           fi
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
