@@ -54,6 +54,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Side-by-side build compatible with Memos 26.10 (calendar versions).
+            applicationIdSuffix = ".calver"
+            versionNameSuffix = "-calver"
+        }
         release {
             minifyEnabled = true
             shrinkResources = true
